@@ -2,16 +2,14 @@
 
 chat:
   broadcast:
-    # Available placeholders:
     # %plugin%  - plugin name/prefix passed as the first argument to ChatUtil.broadcast(...)
     # %message% - message passed as the second argument
     # Color formats: &a, &#7CFF6B, <#7CFF6B> and &x&7&C&F&F&6&B
     format: "%plugin% &8» &f%message%"
 
-    # Also send broadcasts to the server console.
     console: true
 
 # RGB examples for plugin developers:
-# ChatUtil.rgb("7CFF6B")                         -> "&#7CFF6B"
-# ChatUtil.rgb("#7CFF6B", "VoidUHC")             -> RGB-colored text
-# ChatUtil.gradient("Unbound", "#7CFF6B", "#58A6FF") -> RGB gradient
+# ChatUtil.rgb("7CFF6B")  -> "&#7CFF6B"
+# ChatUtil.rgb("#7CFF6B", "Tupluginsito")    -> RGB-colored text
+# ChatUtil.gradient("Unbound", "#7CFF6B", "#58A6FF")        -> RGB gradient
