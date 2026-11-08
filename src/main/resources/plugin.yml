@@ -1,0 +1,10 @@
+name: UnboundAPI
+description: $description
+version: '${version}'
+
+main: Unbound.unboundAPI.UnboundAPI
+paper-plugin-loader: Unbound.unboundAPI.UnboundAPILoader
+api-version: '1.21.11'
+load: STARTUP
+
+authors: [ MarcyWu ]
