@@ -1,5 +1,6 @@
 package Unbound.unboundAPI.chat;
 
+import Unbound.unboundAPI.UnboundAPI;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.title.Title;
@@ -7,18 +8,21 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.io.File;
 import java.time.Duration;
 import java.util.regex.Pattern;
 
 public final class ChatUtil {
 
     private static final LegacyComponentSerializer LEGACY = LegacyComponentSerializer.builder()
-            .character('§')
+            .character('\u00a7')
             .hexColors()
             .useUnusualXRepeatedCharacterHexFormat()
             .build();
+
     private static final Pattern RGB_CODE = Pattern.compile("(?i)\u00a7x(?:\u00a7[0-9a-f]){6}");
     private static final Pattern LEGACY_CODE = Pattern.compile("(?i)\u00a7[0-9a-fk-or]");
+    private static final String DEFAULT_BROADCAST_FORMAT = "%plugin% &8» &f%message%";
 
     private ChatUtil() {
     }
@@ -107,16 +111,121 @@ public final class ChatUtil {
         player.showTitle(Title.title(component(title), component(subtitle), times));
     }
 
+    public static void broadcast(String plugin, String message) {
+        String formatted;
+
+        if (plugin == null || plugin.isBlank()) {
+            formatted = message == null ? "" : message;
+        } else {
+            formatted = getBroadcastFormat()
+                    .replace("%plugin%", plugin)
+                    .replace("%message%", message == null ? "" : message);
+        }
+
+        Component component = component(formatted);
+        Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(component));
+
+        if (shouldBroadcastToConsole()) {
+            Bukkit.getConsoleSender().sendMessage(component);
+        }
+    }
+
     public static void broadcast(String message) {
-        Component formatted = component(message);
-        Bukkit.getOnlinePlayers().forEach(player -> player.sendMessage(formatted));
-        Bukkit.getConsoleSender().sendMessage(formatted);
+        broadcast(null, message);
+    }
+
+    public static String rgb(String hex) {
+        String normalized = normalizeHex(hex);
+        return normalized == null ? "" : "&#" + normalized;
+    }
+
+    public static String rgb(String hex, String message) {
+        return rgb(hex) + (message == null ? "" : message);
+    }
+
+    /**
+     ChatUtil.gradient("Unbound", "#7CFF6B", "#58A6FF"). :p
+     */
+    public static String gradient(String message, String startHex, String endHex) {
+        if (message == null || message.isEmpty()) {
+            return "";
+        }
+
+        String start = normalizeHex(startHex);
+        String end = normalizeHex(endHex);
+        if (start == null || end == null) {
+            return message;
+        }
+
+        int[] startRgb = toRgb(start);
+        int[] endRgb = toRgb(end);
+        int[] characters = message.codePoints().toArray();
+        StringBuilder result = new StringBuilder(message.length() * 14);
+
+        for (int i = 0; i < characters.length; i++) {
+            double progress = characters.length <= 1 ? 0.0 : (double) i / (characters.length - 1);
+            int red = interpolate(startRgb[0], endRgb[0], progress);
+            int green = interpolate(startRgb[1], endRgb[1], progress);
+            int blue = interpolate(startRgb[2], endRgb[2], progress);
+            result.append(String.format("&#%02X%02X%02X", red, green, blue));
+            result.appendCodePoint(characters[i]);
+        }
+        return result.toString();
     }
 
     public static String strip(String message) {
         String formatted = color(message);
         return LEGACY_CODE.matcher(RGB_CODE.matcher(formatted).replaceAll(""))
                 .replaceAll("");
+    }
+
+    private static String getBroadcastFormat() {
+        UnboundAPI api = UnboundAPI.getInstance();
+        File configFile = new File(api.getDataFolder(), "config.yml");
+        if (!configFile.isFile()) {
+            api.saveDefaultConfig();
+        }
+        return api.getConfig().getString("chat.broadcast.format", DEFAULT_BROADCAST_FORMAT);
+    }
+
+    private static boolean shouldBroadcastToConsole() {
+        UnboundAPI api = UnboundAPI.getInstance();
+        File configFile = new File(api.getDataFolder(), "config.yml");
+        if (!configFile.isFile()) {
+            api.saveDefaultConfig();
+        }
+        return api.getConfig().getBoolean("chat.broadcast.console", true);
+    }
+
+    private static String normalizeHex(String hex) {
+        if (hex == null) {
+            return null;
+        }
+
+        String value = hex.trim();
+        if (value.startsWith("#")) {
+            value = value.substring(1);
+        }
+
+        if (value.matches("(?i)[0-9a-f]{3}")) {
+            value = "" + value.charAt(0) + value.charAt(0)
+                    + value.charAt(1) + value.charAt(1)
+                    + value.charAt(2) + value.charAt(2);
+        }
+
+        return value.matches("(?i)[0-9a-f]{6}") ? value.toUpperCase() : null;
+    }
+
+    private static int[] toRgb(String hex) {
+        return new int[]{
+                Integer.parseInt(hex.substring(0, 2), 16),
+                Integer.parseInt(hex.substring(2, 4), 16),
+                Integer.parseInt(hex.substring(4, 6), 16)
+        };
+    }
+
+    private static int interpolate(int start, int end, double progress) {
+        return (int) Math.round(start + (end - start) * progress);
     }
 
     private static boolean isLegacyCode(char value) {
