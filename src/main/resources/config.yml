@@ -1,15 +1,27 @@
-# UnboundAPI - Chat configuration
+# UnboundAPI configuration
 
 chat:
   broadcast:
-    # %plugin%  - plugin name/prefix passed as the first argument to ChatUtil.broadcast(...)
-    # %message% - message passed as the second argument
-    # Color formats: &a, &#7CFF6B, <#7CFF6B> and &x&7&C&F&F&6&B
+    # If the prefix is empty or null, the message is sent without this format.
     format: "%plugin% &8» &f%message%"
-
     console: true
 
-# RGB examples for plugin developers:
-# ChatUtil.rgb("7CFF6B")  -> "&#7CFF6B"
-# ChatUtil.rgb("#7CFF6B", "Tupluginsito")    -> RGB-colored text
-# ChatUtil.gradient("Unbound", "#7CFF6B", "#58A6FF")        -> RGB gradient
+commands:
+  enabled: true
+  permission: "unboundapi.admin"
+
+  tests:
+    enabled: true
+    chat: true
+    menu: true
+    animation: true
+    item: true
+    task: true
+    cooldown: true
+    config: true
+    player: true
+    sound: true
+
+# RGB examplesg
+# api.chat().rgb("#7CFF6B", "Green text")
+# api.chat().gradient("UnboundAPI", "#7CFF6B", "#58A6FF")
